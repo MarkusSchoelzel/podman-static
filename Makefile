@@ -29,13 +29,22 @@ podman-remote:
 podman-ssh: podman
 	$(DOCKER) build --force-rm -t $(PODMAN_SSH_IMAGE) -f Dockerfile-ssh --build-arg BASEIMAGE=$(PODMAN_IMAGE) .
 
-test: test-local-rootless test-local-rootful test-minimal-image podman-remote
+podman-compose: podman
+	$(DOCKER) build --force-rm -t $(PODMAN_COMPOSE_IMAGE) -f Dockerfile-compose --build-arg BASEIMAGE=$(PODMAN_IMAGE) .
+
+test: test-local-rootless test-local-rootful test-local-rootless-docker-compose test-minimal-image podman-remote
 
 test-local-rootful: podman storage-dir
 	IMAGE=$(PODMAN_IMAGE) ./test/test-local-rootful.sh
 
 test-local-rootless: podman storage-dir
 	IMAGE=$(PODMAN_IMAGE) ./test/test-local-rootless.sh
+
+test-local-rootless-docker-compose: podman-compose
+	$(DOCKER) run --rm --privileged -u podman:podman \
+	--mount "type=bind,src=`pwd`/test/test-rootless-compose.sh,dst=/test-rootless-compose.sh" \
+	$(PODMAN_COMPOSE_IMAGE) \
+	/bin/sh -c /test-rootless-compose.sh
 
 test-minimal-image: podman-minimal storage-dir
 	IMAGE=$(PODMAN_MINIMAL_IMAGE) TEST_PREDICATE=MINIMAL SKIP_PORTMAPPING_TEST=true ./test/test-local-rootless.sh

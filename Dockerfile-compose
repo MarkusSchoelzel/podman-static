@@ -1,0 +1,3 @@
+ARG BASEIMAGE
+FROM ${BASEIMAGE}
+RUN apk add --no-cache curl docker-compose
